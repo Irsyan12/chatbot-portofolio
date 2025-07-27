@@ -49,10 +49,10 @@ def read_json_file(json_path):
         return {}
 
 # Ambil isi CV untuk dijadikan konteks
-cv_text = read_cv_text("cv.pdf")
+cv_text = read_cv_text("data/cv.pdf")
 
 # Ambil data proyek dari file JSON
-projects_data = read_json_file("projects.json")
+projects_data = read_json_file("data/projects.json")
 
 # Instruksi sistem untuk chatbot personal
 instruction = (
