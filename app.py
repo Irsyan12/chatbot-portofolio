@@ -5,6 +5,7 @@ import fitz  # pymupdf
 from dotenv import load_dotenv
 from flask_cors import CORS
 import uuid
+import json
 
 # Load environment variables
 load_dotenv()
@@ -36,9 +37,22 @@ def read_cv_text(pdf_path):
     except Exception as e:
         print(f"Failed to read CV: {e}")
         return ""
+    
+# fungsi baca json
+def read_json_file(json_path):
+    try:
+        with open(json_path, 'r') as f:
+            data = json.load(f)
+            return data
+    except Exception as e:
+        print(f"Failed to read JSON file: {e}")
+        return {}
 
 # Ambil isi CV untuk dijadikan konteks
 cv_text = read_cv_text("cv.pdf")
+
+# Ambil data proyek dari file JSON
+projects_data = read_json_file("projects.json")
 
 # Instruksi sistem untuk chatbot personal
 instruction = (
@@ -51,6 +65,9 @@ instruction = (
     "ikuti preferensi bahasa sesuai dengan bahasa yang digunakan oleh pengunjung. "
     "Gunakan data dari CV berikut sebagai referensi:\n\n"
     f"{cv_text}"
+    "\n\nBerikut adalah daftar proyek yang telah dikerjakan:\n"
+    f"{json.dumps(projects_data, indent=2)}\n\n"
+    "Jika ada pertanyaan tentang proyek, berikan informasi yang relevan dari daftar proyek tersebut."
 )
 
 model = genai.GenerativeModel(

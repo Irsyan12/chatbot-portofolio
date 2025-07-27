@@ -1,0 +1,69 @@
+{
+  "certifications": [
+    {
+      "title": "Analyze Data to Answer Questions",
+      "platform": "Coursera",
+      "description": "Discuss the importance of organizing your data before analysis by using sorts and filters. Convert and format data. Apply the use of functions and syntax to create SQL queries to combine data from multiple database tables. Describe the use of functions to conduct basic calculations on data in spreadsheets.",
+      "link": "https://coursera.org/verify/PME673LCJXE6"
+    },
+    {
+      "title": "Process Data from Dirty to Clean",
+      "platform": "Coursera",
+      "description": "Define different types of data integrity and identify risks to data integrity. Apply basic SQL functions to clean string variables in a database. Develop basic SQL queries for use on databases. Describe the process of verifying data cleaning results.",
+      "link": "https://coursera.org/verify/J43MGKACTUJV"
+    },
+    {
+      "title": "Introduce Git and Github",
+      "platform": "Coursera",
+      "description": "Understand why version control is a fundamental tool for coding and collaboration. Install and run Git on your local machine. Use and interact with GitHub. Collaborate with others through remote repositories.",
+      "link": "https://coursera.org/verify/PE3QHPVEGZQY"
+    },
+    {
+      "title": "DeepLearning.AI TensorFlow Developer",
+      "platform": "Coursera",
+      "description": "Introduction to TensorFlow for Artificial Intelligence, Machine Learning, and Deep Learning. Convolutional Neural Networks in TensorFlow. Natural Language Processing in TensorFlow. Sequences, Time Series and Prediction.",
+      "link": "https://coursera.org/verify/85XAJV5W22WU"
+    },
+    {
+      "title": "Pengenalan ke Logika Pemrograman",
+      "platform": "Dicoding",
+      "description": "The class is intended for beginners who want to start learning logic in the field of programming with reference to industry standards. By the end of the class, students will be able to understand basic programming logic and apply it in solving problems in the field of Software Developer work.",
+      "link": "https://www.dicoding.com/certificates/81P230JVYXOY"
+    }
+  ],
+  "projects": [
+    {
+      "title": "Valorant App",
+      "description": "Valorant App is a mobile application designed to provide information about Valorant agents. This app allows users to explore various agents, their roles, and skills in the popular tactical shooter game Valorant. Features include an agent list, role-based filtering, detailed agent information, and skill videos.",
+      "tech_stack": ["flutter"],
+      "links": {
+        "repository": "https://github.com/Irsyan12/valorant_app"
+      }
+    },
+    {
+      "title": "Personal Website",
+      "description": "Irsyan Ramadhan's personal portfolio website showcasing projects, skills, and experience in web development and programming.",
+      "tech_stack": ["react", "firebase", "tailwind", "nextjs"],
+      "links": {
+        "repository": "https://github.com/Irsyan12/my-portofolio",
+        "live_demo": "https://irsyan12.github.io"
+      }
+    },
+    {
+      "title": "Wasteprice Web",
+      "description": "The WastePrice web application is a waste management platform designed to facilitate the buying and selling of recyclable materials. This project was developed as part of an RPL (Rekayasa Perangkat Lunak - Software Engineering) course in the 4th semester of 2023. It enables users to manage waste transactions, view current prices, and interacts with dedicated interfaces for administrators and officers. The application is built using PHP, JavaScript, CSS, and HTML, backed by an SQL database.",
+      "tech_stack": ["javascript", "php", "bootstrap", "sql"],
+      "links": {
+        "repository": "https://github.com/Irsyan12/TIK204-2023-06-WastePrice"
+      }
+    },
+    {
+      "title": "AutiVision",
+      "description": "Autism Detection App is an open-source Flutter application designed to classify images of children as either autistic or non-autistic using a pre-trained TensorFlow Lite model based on MobileNet-v2. This application also features user authentication and a history page to keep track of previous classifications.",
+      "tech_stack": ["flutter", "firebase", "tensorflow", "python"],
+      "links": {
+        "repository": "https://github.com/Irsyan12/Autivision-App"
+      }
+    }
+  ]
+}
