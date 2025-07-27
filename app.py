@@ -1,71 +1,83 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify
 import google.generativeai as genai
-import pandas as pd
 import os
+import fitz  # pymupdf
 from dotenv import load_dotenv
 from flask_cors import CORS
+import uuid
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-
-# Load data produk dari CSV
-produk_df = pd.read_csv("produk.csv")
-
-# Konfigurasi Gemini API
+# Load API Key Gemini
 api_key = os.getenv('GEMINI_API_KEY')
 if not api_key:
     raise ValueError("GEMINI_API_KEY tidak ditemukan dalam environment variables")
+
 genai.configure(api_key=api_key)
 
-# Fungsi bantu untuk menyusun daftar produk sebagai konteks
-def get_produk_context():
-    rows = []
-    for _, row in produk_df.iterrows():
-        rows.append(f"- {row['nama_produk']} ({row['kategori']}), harga: Rp{row['harga']}, stok: {row['stok']}")
-    return "\n".join(rows)
+# Fungsi baca CV (PDF)
+def read_cv_text(pdf_path):
+    try:
+        doc = fitz.open(pdf_path)
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        doc.close()
+        return text
+    except Exception as e:
+        print(f"Failed to read CV: {e}")
+        return ""
 
-# Inisialisasi model Gemini dan session chat
-model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
-    system_instruction=(
-        "Kamu adalah customer service bernama Tessa dari toko Texas Market. "
-        "Jangan pernah menyebutkan kamu adalah AI atau dari Google. "
-        "Tugasmu adalah melayani pelanggan dengan ramah dan profesional. "
-        "Jika pelanggan bertanya tentang stok atau ingin memesan, gunakan daftar produk yang tersedia untuk menjawab."
-        "jika pelanggan bertanya tentang produk, berikan informasi yang relevan. "
-        "jika pelanggan sudah ingin memesan, tanyakan nama dan alamat pengiriman dengan format yang jelas. "
-        "jika pelanggan sudah mengisikan alamat, minta pelanggan untuk mentransfer uang sesuai total belanja ke rekening BSI 7195304698 a/n Irsyan Ramadhan."
-        "Berikut daftar produk:\n" + get_produk_context()
-    )
+# Ambil isi CV untuk dijadikan konteks
+cv_text = read_cv_text("cv.pdf")
+
+# Instruksi sistem untuk chatbot personal
+instruction = (
+    "Kamu adalah chatbot pribadi dari Irsyan Ramadhan, seorang mahasiswa Teknik Komputer "
+    "yang memiliki minat dalam web development, mobile development, dan deep learning. "
+    "dia lahir di Jakarta pada 12 November 2002. jadi umurnya sekarang adalah 22 tahun."
+    "Tugasmu adalah membantu menjawab pertanyaan dari pengunjung tentang Irsyan, termasuk pengalaman, proyek, skill, dan latar belakang pendidikan. "
+    "Jangan katakan bahwa kamu adalah AI atau buatan Google. "
+    "jika ada pertanyaan yang tidak bisa dijawab, katakan silahkan bertanya langsung kepada Irsyan di form kontak. "
+    "ikuti preferensi bahasa sesuai dengan bahasa yang digunakan oleh pengunjung. "
+    "Gunakan data dari CV berikut sebagai referensi:\n\n"
+    f"{cv_text}"
 )
 
-# Simpan sesi chat ke dalam app (bersifat global untuk saat ini)
-chat_session = model.start_chat()
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    system_instruction=instruction
+)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# Sesi per user
+chat_sessions = {}
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    user_message = request.json.get('message')
+    data = request.json
+    user_message = data.get('message')
+    session_id = data.get('session_id')
+
     if not user_message:
         return jsonify({'error': 'No message provided'}), 400
 
+    # Buat session_id jika belum ada
+    if not session_id:
+        session_id = str(uuid.uuid4())
+
+    # Ambil atau buat sesi
+    if session_id not in chat_sessions:
+        chat_sessions[session_id] = model.start_chat()
+
     try:
-        # Kirim pesan ke Gemini dengan chat session (agar ingat percakapan)
-        response = chat_session.send_message(user_message)
-        ai_reply = response.text.strip()
-
+        response = chat_sessions[session_id].send_message(user_message)
+        return jsonify({'reply': response.text.strip(), 'session_id': session_id})
     except Exception as e:
-        print(f"Error in chat endpoint: {str(e)}")  # Log error untuk debugging
-        return jsonify({'error': f'AI service error: {str(e)}'}), 500
-
-    return jsonify({'reply': ai_reply})
+        return jsonify({'error': f'AI error: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
