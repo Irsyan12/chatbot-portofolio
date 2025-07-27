@@ -22,6 +22,11 @@ genai.configure(api_key=api_key)
 # Fungsi baca CV (PDF)
 def read_cv_text(pdf_path):
     try:
+        # Check if file exists
+        if not os.path.exists(pdf_path):
+            print(f"CV file not found: {pdf_path}")
+            return ""
+        
         doc = fitz.open(pdf_path)
         text = ""
         for page in doc:
@@ -56,6 +61,10 @@ model = genai.GenerativeModel(
 # Sesi per user
 chat_sessions = {}
 
+@app.route('/')
+def health_check():
+    return jsonify({'status': 'OK', 'message': 'Irsyan Ramadhan Portfolio Chatbot is running!'})
+
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.json
@@ -80,4 +89,5 @@ def chat():
         return jsonify({'error': f'AI error: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
