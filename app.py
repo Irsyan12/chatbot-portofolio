@@ -16,18 +16,16 @@ CORS(app)
 # Load API Key Gemini
 api_key = os.getenv('GEMINI_API_KEY')
 if not api_key:
-    raise ValueError("GEMINI_API_KEY tidak ditemukan dalam environment variables")
+    raise ValueError("GEMINI_API_KEY not set in environment variables.")
 
 genai.configure(api_key=api_key)
 
 # Fungsi baca CV (PDF)
 def read_cv_text(pdf_path):
     try:
-        # Check if file exists
         if not os.path.exists(pdf_path):
             print(f"CV file not found: {pdf_path}")
             return ""
-        
         doc = fitz.open(pdf_path)
         text = ""
         for page in doc:
@@ -48,26 +46,17 @@ def read_json_file(json_path):
         print(f"Failed to read JSON file: {e}")
         return {}
 
-# Ambil isi CV untuk dijadikan konteks
+# Ambil isi CV untuk dijadikan konteks tambahan
 cv_text = read_cv_text("data/cv.pdf")
-
-# Ambil data proyek dari file JSON
 projects_data = read_json_file("data/projects.json")
 
-# Instruksi sistem untuk chatbot personal
+# Instruksi sistem (tetap singkat, tidak dicampur data CV langsung)
 instruction = (
     "Kamu adalah chatbot pribadi dari Irsyan Ramadhan, seorang mahasiswa Teknik Komputer "
     "yang memiliki minat dalam web development, mobile development, dan deep learning. "
-    "dia lahir di Jakarta pada 12 November 2002. jadi umurnya sekarang adalah 22 tahun."
-    "Tugasmu adalah membantu menjawab pertanyaan dari pengunjung tentang Irsyan, termasuk pengalaman, proyek, skill, dan latar belakang pendidikan. "
-    "Jangan katakan bahwa kamu adalah AI atau buatan Google. "
-    "jika ada pertanyaan yang tidak bisa dijawab, katakan silahkan bertanya langsung kepada Irsyan di form kontak. "
-    "ikuti preferensi bahasa sesuai dengan bahasa yang digunakan oleh pengunjung. "
-    "Gunakan data dari CV berikut sebagai referensi:\n\n"
-    f"{cv_text}"
-    "\n\nBerikut adalah daftar proyek yang telah dikerjakan:\n"
-    f"{json.dumps(projects_data, indent=2)}\n\n"
-    "Jika ada pertanyaan tentang proyek, berikan informasi yang relevan dari daftar proyek tersebut."
+    "Jawab pertanyaan tentang Irsyan berdasarkan data CV dan daftar proyek yang sudah diberikan. "
+    "Jika tidak ada informasi yang relevan, katakan: 'Silakan bertanya langsung kepada Irsyan melalui form kontak.' "
+    "Ikuti bahasa yang digunakan pengunjung."
 )
 
 model = genai.GenerativeModel(
@@ -77,6 +66,23 @@ model = genai.GenerativeModel(
 
 # Sesi per user
 chat_sessions = {}
+
+# ========== Anti Prompt Injection Filter ==========
+def is_prompt_injection(message: str) -> bool:
+    suspicious_patterns = [
+        # English
+        "ignore previous", "disregard", "forget instructions",
+        "system prompt", "reveal", "api key", "override", "jailbreak",
+        "remove safety", "disable filter", "bypass",
+        # Indonesian
+        "abaikan instruksi", "lupakan perintah", "hapus aturan",
+        "tunjukkan api key", "bocorkan", "abaikan aturan",
+        "matikan filter", "lewati aturan"
+    ]
+    lower_msg = message.lower()
+    return any(p in lower_msg for p in suspicious_patterns)
+
+# =================================================
 
 @app.route('/')
 def health_check():
@@ -91,6 +97,13 @@ def chat():
     if not user_message:
         return jsonify({'error': 'No message provided'}), 400
 
+    # 🔒 Cek apakah ada indikasi prompt injection
+    if is_prompt_injection(user_message):
+        return jsonify({
+            'reply': "Permintaan ini tidak valid. Silakan hanya bertanya tentang pengalaman, proyek, skill, atau pendidikan Irsyan.",
+            'session_id': session_id or "invalid"
+        })
+
     # Buat session_id jika belum ada
     if not session_id:
         session_id = str(uuid.uuid4())
@@ -100,7 +113,14 @@ def chat():
         chat_sessions[session_id] = model.start_chat()
 
     try:
-        response = chat_sessions[session_id].send_message(user_message)
+        # Tambahkan konteks CV & Project setiap kali user bertanya
+        context_message = (
+            f"CV data:\n{cv_text}\n\n"
+            f"Projects data:\n{json.dumps(projects_data, indent=2)}\n\n"
+            f"User question: {user_message}"
+        )
+
+        response = chat_sessions[session_id].send_message(context_message)
         return jsonify({'reply': response.text.strip(), 'session_id': session_id})
     except Exception as e:
         return jsonify({'error': f'AI error: {str(e)}'}), 500
